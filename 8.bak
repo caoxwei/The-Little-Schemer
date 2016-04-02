@@ -1,0 +1,490 @@
+#lang racket
+;(defineatom?；(lambda(x)；(and(not(pair?x))(not(nu；(define1st-sub-exp；(lambda(aexp)；(car(cdraexp))))；(define2nd-sub-exp；(lambda(aexp)；(car(cdr(cdraexp)))))；(defineeq?-c；(
+
+
+  
+
+
+(define atom?
+    (lambda(x)
+     (and (not(pair? x)) (not (null? x)))))
+
+(define 1st-sub-exp
+      (lambda (aexp)
+    (car (cdr aexp))))
+
+(define 2nd-sub-exp
+    (lambda (aexp)
+    (car (cdr(cdr aexp)))))
+
+(define eq?-c
+    (lambda (a)
+     (lambda(x)
+          (eq? x a))))
+
+(define SB
+  (lambda (a)
+      (lambda (x)
+     (eq? x a))))
+
+(define eq?-salad (eq?-c 'salad))
+
+;(eq?-salad 'salad)
+
+;((eq?-c 'salad) 'tuna)
+
+;(define rember-eq? '(rember-f test?))
+
+(define rember-f
+   (lambda (test?)
+      (lambda (a l)
+      (cond
+((null? l) (quote()))
+((test? (car l) a ) (cdr l))
+(else (cons (car l)
+((rember-f test?) a
+(cdr l))))))))
+
+; ((rember-f eq?) 'tuna '(tuna salad is good))
+
+;((rember-f eq?) 'tuna '(shrimp salad and tuna salad))
+
+(define rember-eq? (rember-f eq?))
+
+(define insertL-f
+
+(lambda(test?)
+
+(lambda (new old l)
+
+(cond
+
+((null?) (quote()))
+
+((test? (car l) old)
+
+(cons new (cons old (cdr l))))
+
+(else (cons (car l)
+
+((insertL-f test?) new old
+
+(cdr l))))))))
+
+(define insertR-f
+
+(lambda(test?)
+
+(lambda (new old l)
+
+(cond
+
+((null?) (quote()))
+
+((test? (car l) old)
+
+(cons old (cons new (cdr l))))
+
+(else (cons (car l)
+
+((insertL-f test?) new old
+
+(cdr l))))))))
+
+(define seqL
+
+(lambda(new old l)
+
+(cons new (cons old l))))
+
+(define seqR
+
+(lambda(new old l)
+
+(cons old (cons new l))))
+
+(define insert-g
+
+(lambda (seq)
+
+(lambda (new old l)
+
+(cond
+
+((null? l) (quote()))
+
+((eq? (car l) old)
+
+(seq new old (cdr l)))
+
+(else (cons (car l)
+
+((insert-g seq) new old
+
+(cdr l))))))))
+
+(define insertL (insert-g seqL))
+
+(define insertR (insert-g seqR))
+
+;第二定义
+
+(define insertL2
+
+(insert-g
+
+(lambda(new old l)
+
+(cons new (cons old l)))))
+
+(define subst
+
+(lambda (new old l)
+
+(cond
+
+((null? l) (quote()))
+
+((eq? (car l) old)
+
+(cons new (cdr l)))
+
+(else (cons (car l)
+
+(subst new old (cdr l)))))))
+
+(define seqS
+
+(lambda (new old l)
+
+(cons new l)))
+
+(define subst2 (insert-g seqS))
+
+;(rember 'a '(a b c))
+
+(define yyy
+
+(lambda (a l)
+
+((insert-g seqrem )#f a l)))
+
+(define seqrem
+
+(lambda (new old l)
+
+l))
+
+(define operator
+
+(lambda (aexp)
+
+(car aexp)))
+
+(define atom-to-function
+
+(lambda(x)
+
+(cond
+
+((eq? x (quote +)) +)
+
+((eq? x (quote *)) *)
+
+(else expt))))
+
+;(atom-to-function (operator '(+ 5 3)))
+
+(define value
+
+(lambda(nexp)
+
+(cond
+
+((atom? nexp)nexp)
+
+(else
+
+((atom-to-function
+
+(operator nexp))
+
+(value (1st-sub-exp nexp))
+
+(value (2nd-sub-exp nexp)))))))
+
+;多重移除
+
+(define multirember-f
+
+(lambda(test?)
+
+(lambda (a lat)
+
+(cond
+
+((null? lat ) (quote ()))
+
+((test? a (car lat))
+
+((multirember-f test?) a
+
+(cdr lat)))
+
+(else (cons (car lat)
+
+((multirember-f test?) a
+
+(define multirember-eq? (multirember-f eq?))
+
+;我们来结束这一章
+
+(define eq?-tuna (eq?-c 'tuna ))
+
+;(define eq?-tuna (eq?-c (quote tuna))) (cdr lat))))))))
+
+(define multiremberT
+
+(lambda(test? lat)
+
+(cond
+
+((null? lat) (quote()))
+
+((test? (car lat))
+
+(multiremberT test? (cdr lat)))
+
+(else (cons (car lat)
+
+(multiremberT test?
+
+(cdr lat)))))))
+
+;(multiremberT eq?-tuna '(sh sa tuna sa and tuna))
+
+(define multirember&co
+
+(lambda (a lat col)
+
+(cond
+
+((null? lat)
+
+(col (quote()) (quote ())))
+
+((eq? (car lat) a )
+
+(multirember&co a
+
+(cdr lat)
+
+(lambda (newlat seen)
+
+(col newlat
+
+(cons (car lat) seen)))))
+
+(else
+
+(multirember&co a
+
+(cdr lat)
+
+(lambda (newlat seen)
+
+(col (cons (car lat) newlat)
+
+seen)))))))
+
+;(multirember&co 'tuna '( st tuna and sw) a-friend)输出#f
+
+;(multirember&co 'tuna '() a-friend)输出#t
+
+(define a-friend
+
+(lambda (x y)
+
+(null? y)))
+
+(define new-friend
+
+(lambda(newlat seen)
+
+(a-friend newlat
+
+(cons (quote tuna) seen))))
+
+(define latest-friend
+
+(lambda(newlat seen)
+
+(a-friend
+
+(cons (quote and) newlat)seen)))
+
+(define last-friend
+
+(lambda (x y)
+
+(null? x)))
+
+(define multiinsertLR
+
+(lambda (new oldL oldR lat)
+
+(cond
+
+((null? lat ) (quote ()))
+
+((eq? (car lat) oldL)
+
+(cons new
+
+(cons oldL
+
+(multiinsertLR new oldL oldR
+
+(cdr lat)))))
+
+((eq? (car lat ) oldR)
+
+(cons oldR
+
+(cons new
+
+(multiinsertLR new oldL oldR
+
+(cdr lat)))))
+
+(else
+
+(cons (car lat)
+
+(multiinsertLR new oldL oldR
+
+(cdr lat)))))))
+
+(define multiinsertLR&co
+
+(lambda (new oldL oldR lat col)
+
+(cond
+
+((null? lat)
+
+(col (quote()) 0 0))
+
+((eq? (car lat) oldL)
+
+(multiinsertLR&co new oldL oldR
+
+(cdr lat)
+
+(lambda (newlat L R)
+
+(col (cos new
+
+(cos oldL newlat))
+
+(add1 L) R))))
+
+((eq? (car lat) oldR)
+
+(multiinsertLR&co new oldL oldR
+
+(cdr lat)
+
+(lambda(newlat L R)
+
+(col (cos oldR(cons new newlat))
+
+L(add1 R)))))
+
+(else
+
+(multiinsertLR&co new oldL oldR
+
+(cdr lat)
+
+(lambda (newlat L R)
+
+(col(cons (car lat ) newlat) L R))))))) ;(multiinsertLR&co 'salty 'fish 'chips '(chips and fish and chips) )
+
+(define even?
+
+(lambda(n)
+   (=(*(/n2)2)n)))；(defineevens-only*；(lambda(l)；(cond；((null?l)(quote()))；((atom?(carl))；(cond；((even?(carl))；(cons(carl)；(evens-only*(cdrl))))；(else(evens-only*(cdrl))；(else(cons(ev
+
+--------------------------------------------------------------------------------
+
+
+(= (* (/ n 2 ) 2) n)))
+
+
+(define evens-only*
+
+(lambda(l)
+
+(cond
+
+((null? l) (quote()))
+
+((atom? (car l))
+
+(cond
+
+((even? (car l))
+
+(cons (car l)
+
+(evens-only* (cdr l))))
+
+(else (evens-only*(cdr l)))))
+
+(else(cons(evens-only* (car l))
+
+(evens-only* (cdr l)))))))
+
+(define evens-only*&co
+
+(lambda(l col)
+
+(cond
+
+((null? l) (col(quote()) 1 0))
+
+((atom? (car l))
+
+(cond
+
+((even? (car l))
+
+(evens-only*&co (cdr l)
+
+(lambda (newl p s)
+
+(col (cons(car l)newl) (* (car l) p) s ))))
+
+(else (evens-only*&co (cdr l)
+
+(lambda (newl p s) (col newl
+
+p (+ (car l) s ))))))) (else(evens-only* (car l)
+
+(lambda (al ap as )
+
+(evens-only*&co (cdr l)
+
+(lambda (dl dp ds) (col (cons al dl) (* ap dp)
+
+(+ as ds)))))))))) (define the-last-friend
+
+(lambda (newl product sum)
+
+(cons sum
+
+(cons product
+
+newl))))
+
